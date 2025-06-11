@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api_gateway:
+    build: ./api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - LOAD_BALANCER_URL=http://load_balancer:8001
+    depends_on:
+      - load_balancer
+
+  load_balancer:
+    build: ./load_balancer
+    ports:
+      - "8001:8001"
+    environment:
+      - SERVIDORES=http://server1:8002,http://server2:8002
+    depends_on:
+      - server1
+      - server2
+
+  server1:
+    build: ./server
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      - SERVER_ID=1
+    depends_on:
+      - db
+
+  server2:
+    build: ./server
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      - SERVER_ID=2
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=dbname
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data: 

@@ -1,0 +1,147 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+		"name": "Sistema Distribuído",
+		"description": "Coleção de endpoints para testar a aplicação de arquitetura distribuída",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticação",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"url": "{{gateway_url}}/auth/login",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"usuario\",\n    \"password\": \"senha\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Itens",
+			"item": [
+				{
+					"name": "Criar Item",
+					"request": {
+						"method": "POST",
+						"url": "{{gateway_url}}/itens",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Item Teste\",\n    \"descricao\": \"Descrição do item\",\n    \"preco\": 99.99\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Listar Itens",
+					"request": {
+						"method": "GET",
+						"url": "{{gateway_url}}/itens",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Obter Item por ID",
+					"request": {
+						"method": "GET",
+						"url": "{{gateway_url}}/itens/{{item_id}}",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Atualizar Item",
+					"request": {
+						"method": "PUT",
+						"url": "{{gateway_url}}/itens/{{item_id}}",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Item Atualizado\",\n    \"descricao\": \"Nova descrição\",\n    \"preco\": 149.99\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Remover Item",
+					"request": {
+						"method": "DELETE",
+						"url": "{{gateway_url}}/itens/{{item_id}}",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (pm.response.code === 200) {",
+					"    var jsonData = pm.response.json();",
+					"    if (jsonData.token) {",
+					"        pm.environment.set(\"token\", jsonData.token);",
+					"    }",
+					"    if (jsonData.id) {",
+					"        pm.environment.set(\"item_id\", jsonData.id);",
+					"    }",
+					"}"
+				]
+			}
+		}
+	]
+} 
