@@ -5,6 +5,8 @@ import os
 import itertools
 from dotenv import load_dotenv
 from starlette.responses import Response
+from typing import TypeVar, Generic, Optional, Any
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -21,9 +23,19 @@ app.add_middleware(
 SERVIDORES = os.getenv("SERVIDORES", "http://localhost:8002,http://localhost:8003").split(",")
 servidor_atual = itertools.cycle(SERVIDORES)
 
+T = TypeVar('T')
+
+class ResponseModel(Generic[T]):
+    status: str
+    data: Optional[T] = None
+    message: Optional[str] = None
+
 @app.get("/saude")
 def saude():
-    return {"status": "saudavel", "servico": "load-balancer", "servidores": SERVIDORES}
+    return ResponseModel(
+        status="success",
+        data={"status": "saudavel", "servico": "load-balancer", "servidores": SERVIDORES}
+    )
 
 @app.middleware("http")
 async def proxy_to_server(request: Request, call_next):
@@ -39,5 +51,8 @@ async def proxy_to_server(request: Request, call_next):
             data=await request.body()
         )
         return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
-    except Exception:
-        raise HTTPException(status_code=503, detail="Serviço indisponível") 
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message="Serviço indisponível"
+        ) 

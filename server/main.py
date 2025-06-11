@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
+from typing import TypeVar, Generic, Optional, Any
 
 load_dotenv()
 
@@ -23,6 +24,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+T = TypeVar('T')
+
+class ResponseModel(Generic[T]):
+    status: str
+    data: Optional[T] = None
+    message: Optional[str] = None
 
 class Item(Base):
     __tablename__ = "itens"
@@ -56,48 +64,109 @@ def get_db():
 @app.get("/saude")
 def saude():
     porta = os.getenv("PORTA", "8002")
-    return {"status": "saudavel", "servidor": porta}
+    return ResponseModel(
+        status="success",
+        data={"status": "saudavel", "servidor": porta}
+    )
 
-@app.post("/itens", response_model=ItemResponse)
+@app.post("/itens")
 def criar_item(item: ItemCreate, db: Session = Depends(get_db)):
-    novo = Item(**item.dict())
-    db.add(novo)
-    db.commit()
-    db.refresh(novo)
-    return novo
+    try:
+        novo = Item(**item.dict())
+        db.add(novo)
+        db.commit()
+        db.refresh(novo)
+        return ResponseModel(
+            status="success",
+            data=novo
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
-@app.get("/itens", response_model=list[ItemResponse])
+@app.get("/itens")
 def listar_itens(db: Session = Depends(get_db)):
-    return db.query(Item).all()
+    try:
+        itens = db.query(Item).all()
+        return ResponseModel(
+            status="success",
+            data=itens
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
-@app.get("/itens/{item_id}", response_model=ItemResponse)
+@app.get("/itens/{item_id}")
 def obter_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item não encontrado")
-    return item
+    try:
+        item = db.query(Item).filter(Item.id == item_id).first()
+        if not item:
+            return ResponseModel(
+                status="error",
+                message="Item não encontrado"
+            )
+        return ResponseModel(
+            status="success",
+            data=item
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
-@app.put("/itens/{item_id}", response_model=ItemResponse)
+@app.put("/itens/{item_id}")
 def atualizar_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db)):
-    obj = db.query(Item).filter(Item.id == item_id).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Item não encontrado")
-    for k, v in item.dict().items():
-        setattr(obj, k, v)
-    db.commit()
-    db.refresh(obj)
-    return obj
+    try:
+        obj = db.query(Item).filter(Item.id == item_id).first()
+        if not obj:
+            return ResponseModel(
+                status="error",
+                message="Item não encontrado"
+            )
+        for k, v in item.dict().items():
+            setattr(obj, k, v)
+        db.commit()
+        db.refresh(obj)
+        return ResponseModel(
+            status="success",
+            data=obj
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
 @app.delete("/itens/{item_id}")
 def remover_item(item_id: int, db: Session = Depends(get_db)):
-    obj = db.query(Item).filter(Item.id == item_id).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Item não encontrado")
-    db.delete(obj)
-    db.commit()
-    return {"message": "Item removido com sucesso"}
+    try:
+        obj = db.query(Item).filter(Item.id == item_id).first()
+        if not obj:
+            return ResponseModel(
+                status="error",
+                message="Item não encontrado"
+            )
+        db.delete(obj)
+        db.commit()
+        return ResponseModel(
+            status="success",
+            message="Item removido com sucesso"
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
 @app.get("/identidade")
 def identidade():
     porta = os.getenv("PORTA", "desconhecido")
-    return {"servidor": porta} 
+    return ResponseModel(
+        status="success",
+        data={"servidor": porta}
+    ) 

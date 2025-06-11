@@ -7,6 +7,8 @@ import os
 import requests
 from starlette.responses import Response
 from dotenv import load_dotenv
+from typing import TypeVar, Generic, Optional, Any
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -29,6 +31,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 USERS_DB = {"usuario": {"username": "usuario", "password": "senha123"}}
 
+T = TypeVar('T')
+
+class ResponseModel(Generic[T]):
+    status: str
+    data: Optional[T] = None
+    message: Optional[str] = None
+
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
@@ -48,11 +57,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = USERS_DB.get(form_data.username)
-    if not user or user["password"] != form_data.password:
-        raise HTTPException(status_code=401, detail="Usuário ou senha incorretos")
-    access_token = create_access_token({"sub": user["username"]}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    return {"access_token": access_token, "token_type": "bearer"}
+    try:
+        user = USERS_DB.get(form_data.username)
+        if not user or user["password"] != form_data.password:
+            return ResponseModel(
+                status="error",
+                message="Usuário ou senha incorretos"
+            )
+        access_token = create_access_token({"sub": user["username"]}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return ResponseModel(
+            status="success",
+            data={"access_token": access_token, "token_type": "bearer"}
+        )
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message=str(e)
+        )
 
 @app.middleware("http")
 async def proxy_to_lb(request: Request, call_next):
@@ -67,9 +88,15 @@ async def proxy_to_lb(request: Request, call_next):
             data=await request.body()
         )
         return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
-    except Exception:
-        raise HTTPException(status_code=503, detail="Serviço indisponível")
+    except Exception as e:
+        return ResponseModel(
+            status="error",
+            message="Serviço indisponível"
+        )
 
 @app.get("/saude")
 async def saude():
-    return {"status": "saudavel", "servico": "api-gateway"} 
+    return ResponseModel(
+        status="success",
+        data={"status": "saudavel", "servico": "api-gateway"}
+    ) 
