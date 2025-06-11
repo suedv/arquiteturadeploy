@@ -5,94 +5,177 @@
   },
   "item": [
     {
-      "name": "Login (obter token)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
-        ],
-        "body": {
-          "mode": "urlencoded",
-          "urlencoded": [
-            { "key": "username", "value": "usuario" },
-            { "key": "password", "value": "senha123" }
-          ]
+      "name": "1. Autenticação",
+      "item": [
+        {
+          "name": "Login (obter token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "usuario" },
+                { "key": "password", "value": "senha123" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/token", "host": ["{{base_url}}"], "path": ["token"] }
+          }
         },
-        "url": { "raw": "http://localhost:8000/token", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["token"] }
-      }
+        {
+          "name": "Erro: Login com credenciais inválidas",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "usuario" },
+                { "key": "password", "value": "senha_errada" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/token", "host": ["{{base_url}}"], "path": ["token"] }
+          }
+        }
+      ]
     },
     {
-      "name": "Criar Item",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nome\": \"Item Teste\",\n  \"descricao\": \"Descrição do item\",\n  \"preco\": 99.99\n}"
+      "name": "2. Operações CRUD",
+      "item": [
+        {
+          "name": "Criar Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Item Teste\",\n  \"descricao\": \"Descrição do item\",\n  \"preco\": 99.99\n}"
+            },
+            "url": { "raw": "{{base_url}}/itens", "host": ["{{base_url}}"], "path": ["itens"] }
+          }
         },
-        "url": { "raw": "http://localhost:8000/itens", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens"] }
-      }
-    },
-    {
-      "name": "Listar Itens",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": { "raw": "http://localhost:8000/itens", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens"] }
-      }
-    },
-    {
-      "name": "Obter Item por ID",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": { "raw": "http://localhost:8000/itens/1", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens", "1"] }
-      }
-    },
-    {
-      "name": "Atualizar Item",
-      "request": {
-        "method": "PUT",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nome\": \"Item Atualizado\",\n  \"descricao\": \"Nova descrição\",\n  \"preco\": 149.99\n}"
+        {
+          "name": "Listar Itens",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/itens", "host": ["{{base_url}}"], "path": ["itens"] }
+          }
         },
-        "url": { "raw": "http://localhost:8000/itens/1", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens", "1"] }
-      }
+        {
+          "name": "Obter Item por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/itens/1", "host": ["{{base_url}}"], "path": ["itens", "1"] }
+          }
+        },
+        {
+          "name": "Atualizar Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Item Atualizado\",\n  \"descricao\": \"Nova descrição\",\n  \"preco\": 149.99\n}"
+            },
+            "url": { "raw": "{{base_url}}/itens/1", "host": ["{{base_url}}"], "path": ["itens", "1"] }
+          }
+        },
+        {
+          "name": "Remover Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/itens/1", "host": ["{{base_url}}"], "path": ["itens", "1"] }
+          }
+        }
+      ]
     },
     {
-      "name": "Remover Item",
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": { "raw": "http://localhost:8000/itens/1", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens", "1"] }
-      }
+      "name": "3. Testes de Balanceamento",
+      "item": [
+        {
+          "name": "Verificar Servidor (identidade)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/identidade", "host": ["{{base_url}}"], "path": ["identidade"] }
+          }
+        }
+      ]
     },
     {
-      "name": "Erro: Obter Item inexistente",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": { "raw": "http://localhost:8000/itens/9999", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["itens", "9999"] }
-      }
+      "name": "4. Cenários de Erro",
+      "item": [
+        {
+          "name": "Erro: Token inválido",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer token_invalido" }
+            ],
+            "url": { "raw": "{{base_url}}/itens", "host": ["{{base_url}}"], "path": ["itens"] }
+          }
+        },
+        {
+          "name": "Erro: Item inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/itens/9999", "host": ["{{base_url}}"], "path": ["itens", "9999"] }
+          }
+        },
+        {
+          "name": "Erro: Dados inválidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"\",\n  \"preco\": -1\n}"
+            },
+            "url": { "raw": "{{base_url}}/itens", "host": ["{{base_url}}"], "path": ["itens"] }
+          }
+        }
+      ]
     }
   ],
   "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "    pm.collectionVariables.set('base_url', 'http://localhost:8000');",
+          "}"
+        ]
+      }
+    },
     {
       "listen": "test",
       "script": {
@@ -103,6 +186,13 @@
           "}"
         ]
       }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
     }
   ]
 } 

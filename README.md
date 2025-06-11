@@ -4,23 +4,49 @@ Este projeto implementa uma arquitetura distribuída com API Gateway, Load Balan
 
 ## Arquitetura
 
+```mermaid
+graph LR
+    Client[Cliente HTTP/Postman] --> Gateway[API Gateway]
+    Gateway --> LB[Load Balancer]
+    LB --> Server1[Server 1]
+    LB --> Server2[Server 2]
+    Server1 --> DB[(PostgreSQL)]
+    Server2 --> DB
 ```
-┌─────────────┐     ┌───────────────┐     ┌─────────────┐
-│             │     │               │     │             │
-│  API Gateway│────▶│Load Balancer  │────▶│   Server 1  │
-│  (Port 8000)│     │  (Port 8001)  │     │  (Port 8002)│
-│             │     │               │     │             │
-└─────────────┘     └───────────────┘     └─────────────┘
-                           │
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │             │
-                    │   Server 2  │
-                    │  (Port 8003)│
-                    │             │
-                    └─────────────┘
+
+## Padrão MVC
+
+O projeto segue o padrão Model-View-Controller (MVC) em cada serviço:
+
+### Model
+- Define as entidades de domínio (ex: Item)
+- Encapsula o acesso a dados (SQLAlchemy)
+- Implementa regras de negócio e validações
+
+### View
+- Representada pelas respostas JSON formatadas
+- Estrutura consistente de envelope:
+```json
+{
+    "status": "success",
+    "data": { ... },
+    "message": null
+}
 ```
+ou em caso de erro:
+```json
+{
+    "status": "error",
+    "data": null,
+    "message": "Mensagem de erro"
+}
+```
+
+### Controller
+- Expõe as rotas REST
+- Valida parâmetros
+- Orquestra chamadas ao Model
+- Retorna a View adequada
 
 ## Requisitos
 
@@ -143,7 +169,49 @@ uvicorn main:app --host 0.0.0.0 --port 8003
 
 ## Coleção Postman
 
-Uma coleção Postman está disponível no arquivo `postman_collection.json` com exemplos de todas as requisições necessárias.
+A coleção Postman (`postman_collection.json`) inclui:
+
+1. **Autenticação**
+   - POST /token - Obter token JWT
+
+2. **Operações CRUD**
+   - POST /itens - Criar novo item
+   - GET /itens - Listar todos os itens
+   - GET /itens/{id} - Obter item específico
+   - PUT /itens/{id} - Atualizar item
+   - DELETE /itens/{id} - Remover item
+
+3. **Testes de Balanceamento**
+   - GET /identidade - Verificar qual servidor respondeu
+
+4. **Cenários de Erro**
+   - Autenticação inválida
+   - Item não encontrado
+   - Validação de dados
+   - Serviço indisponível
+
+Para usar a coleção:
+1. Importe o arquivo `postman_collection.json` no Postman
+2. Configure a variável de ambiente `base_url` com a URL do API Gateway
+3. Execute a requisição de autenticação e copie o token
+4. Configure a variável de ambiente `token` com o valor copiado
+
+## Deploy no Railway
+
+O projeto está disponível em:
+- API Gateway: [https://api-gateway.up.railway.app](https://api-gateway.up.railway.app)
+- Server 1: [https://server1.up.railway.app](https://server1.up.railway.app)
+- Server 2: [https://server2.up.railway.app](https://server2.up.railway.app)
+
+## Responsabilidades Individuais
+
+| Integrante | Componente | Responsabilidades |
+|------------|------------|-------------------|
+| [Nome] | API Gateway | Autenticação JWT, roteamento, proxy |
+| [Nome] | Load Balancer | Balanceamento round-robin, proxy |
+| [Nome] | Server 1 | CRUD de itens, modelo MVC |
+| [Nome] | Server 2 | CRUD de itens, modelo MVC |
+| [Nome] | Banco de Dados | Modelo SQLAlchemy, DAO |
 
 ## Estrutura do Projeto
 
