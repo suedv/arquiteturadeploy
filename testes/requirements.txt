@@ -1,6 +1,0 @@
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.24.1
-python-dotenv==1.0.0
-attrs==22.2.0
-trio==0.23.1 

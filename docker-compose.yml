@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   api_gateway:
     build: ./api_gateway
@@ -7,6 +6,7 @@ services:
       - "8000:8000"
     environment:
       - LOAD_BALANCER_URL=http://load_balancer:8001
+      - SECRET_KEY=supersecret
     depends_on:
       - load_balancer
 
@@ -42,6 +42,8 @@ services:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=dbname
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

@@ -1,87 +1,166 @@
-# Sistema Distribuído com API Gateway
+# Sistema Distribuído com API Gateway e Load Balancer
 
-## Diagrama da Arquitetura
+Este projeto implementa uma arquitetura distribuída com API Gateway, Load Balancer e múltiplos servidores de aplicação, seguindo o padrão MVC.
 
-```mermaid
-graph TD
-    Client[Cliente] --> |Requisição| Gateway[API Gateway]
-    Gateway --> |Balanceamento| LB[Load Balancer]
-    LB --> |Distribuição| Server1[Servidor 1]
-    LB --> |Distribuição| Server2[Servidor 2]
-    Server1 --> |Persistência| DB[(Banco de Dados)]
-    Server2 --> |Persistência| DB
-    DB --> |Resposta| Server1
-    DB --> |Resposta| Server2
-    Server1 --> |Resposta| LB
-    Server2 --> |Resposta| LB
-    LB --> |Resposta| Gateway
-    Gateway --> |Resposta| Client
+## Arquitetura
+
+```
+┌─────────────┐     ┌───────────────┐     ┌─────────────┐
+│             │     │               │     │             │
+│  API Gateway│────▶│Load Balancer  │────▶│   Server 1  │
+│  (Port 8000)│     │  (Port 8001)  │     │  (Port 8002)│
+│             │     │               │     │             │
+└─────────────┘     └───────────────┘     └─────────────┘
+                           │
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │             │
+                    │   Server 2  │
+                    │  (Port 8003)│
+                    │             │
+                    └─────────────┘
 ```
 
-## Padrão MVC
+## Requisitos
 
-O projeto implementa o padrão MVC (Model-View-Controller) da seguinte forma:
+- Python 3.8+
+- PostgreSQL
+- pip (gerenciador de pacotes Python)
 
-### Model
-- Responsável pela lógica de negócios
-- Implementa a camada de persistência
-- Contém as classes de domínio
-
-### View
-- Responsável pela apresentação dos dados
-- Serialização em JSON
-- Formatação das respostas HTTP
-
-### Controller
-- Gerencia as requisições HTTP
-- Coordena Model e View
-- Implementa as rotas da API
-
-## Instruções de Uso
+## Configuração do Ambiente
 
 1. Clone o repositório
-2. Configure as variáveis de ambiente:
+2. Crie um ambiente virtual Python para cada serviço:
+```bash
+# API Gateway
+cd api_gateway
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+
+# Load Balancer
+cd ../load_balancer
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+
+# Server
+cd ../server
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+```
+
+3. Configure as variáveis de ambiente:
+
+**api_gateway/.env**
+```
+SECRET_KEY=supersecret
+LOAD_BALANCER_URL=http://localhost:8001
+```
+
+**load_balancer/.env**
+```
+SERVIDORES=http://localhost:8002,http://localhost:8003
+```
+
+**server/.env**
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+```
+
+4. Configure o banco de dados PostgreSQL:
+```sql
+CREATE DATABASE dbname;
+CREATE USER user WITH PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE dbname TO user;
+```
+
+## Executando os Serviços
+
+1. Inicie o banco de dados PostgreSQL
+
+2. Em terminais separados, execute cada serviço:
+
+```bash
+# Terminal 1 - API Gateway
+cd api_gateway
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Terminal 2 - Load Balancer
+cd load_balancer
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+uvicorn main:app --host 0.0.0.0 --port 8001
+
+# Terminal 3 - Server 1
+cd server
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+uvicorn main:app --host 0.0.0.0 --port 8002
+
+# Terminal 4 - Server 2
+cd server
+source venv/bin/activate  # Linux/Mac
+# ou
+.\venv\Scripts\activate  # Windows
+uvicorn main:app --host 0.0.0.0 --port 8003
+```
+
+## Testando a Aplicação
+
+1. Acesse a documentação Swagger em http://localhost:8000/docs
+
+2. Autenticação:
+   - Use o endpoint `/token` com as credenciais:
+     - Username: usuario
+     - Password: senha123
+   - Copie o token retornado
+
+3. Use o token no header de todas as requisições:
    ```
-   GATEWAY_URL=http://localhost:8000
-   LOAD_BALANCER_URL=http://localhost:8001
-   SERVER_URL=http://localhost:8002
-   DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-   ```
-3. Execute com Docker Compose:
-   ```bash
-   docker-compose up -d
+   Authorization: Bearer <seu_token>
    ```
 
-## Postman Collection
+4. Endpoints disponíveis:
+   - POST /itens - Criar item
+   - GET /itens - Listar itens
+   - GET /itens/{id} - Obter item
+   - PUT /itens/{id} - Atualizar item
+   - DELETE /itens/{id} - Remover item
 
-1. Importe o arquivo `postman_collection.json`
-2. Configure o ambiente com as variáveis:
-   - `gateway_url`
-   - `server_url`
-3. Execute os testes na ordem:
-   - Autenticação
-   - CRUD de recursos
-   - Cenários de erro
+## Coleção Postman
 
-## Responsabilidades Individuais
+Uma coleção Postman está disponível no arquivo `postman_collection.json` com exemplos de todas as requisições necessárias.
 
-| Integrante | Componente |
-|------------|------------|
-| [Nome] | API Gateway |
-| [Nome] | Balanceador de Carga |
-| [Nome] | Serviço SERVER1 |
-| [Nome] | Banco de Dados / Model / DAO |
+## Estrutura do Projeto
 
-## URLs de Produção (Railway)
-
-- API Gateway: [URL_DO_GATEWAY]
-- Serviço de Aplicação: [URL_DO_SERVICO]
-
-## Convenções de Commit
-
-- feat(componente): nova funcionalidade
-- fix(componente): correção de bug
-- docs(componente): documentação
-- refactor(componente): refatoração
-
-Exemplo: `feat(controller): adiciona rota POST /orders` 
+```
+.
+├── api_gateway/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── .env
+├── load_balancer/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── .env
+├── server/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── .env
+├── postman_collection.json
+└── README.md
+```
