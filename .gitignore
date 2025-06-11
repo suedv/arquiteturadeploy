@@ -1,5 +1,14 @@
+# Ambientes virtuais
+venv/
+server/venv/
+load_balancer/venv/
+api_gateway/venv/
+
 # Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 *.py[cod]
 *$py.class
 *.so
@@ -21,15 +30,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-venv/
-ENV/
-
-# IDE
-.idea/
+# IDEs e ferramentas
 .vscode/
-*.swp
-*.swo
+.idea/
+
+# Cache e outros
+.mypy_cache/
+.pytest_cache/
+
+# Outros
+.DS_Store
 
 # Environment variables
 .env
