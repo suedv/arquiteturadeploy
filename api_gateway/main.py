@@ -7,7 +7,7 @@ import os
 import requests
 from starlette.responses import Response
 from dotenv import load_dotenv
-from typing import TypeVar, Generic, Optional, Any
+from typing import Optional, Any
 from pydantic import BaseModel
 
 load_dotenv()
@@ -31,11 +31,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 USERS_DB = {"usuario": {"username": "usuario", "password": "senha123"}}
 
-T = TypeVar('T')
-
-class ResponseModel(Generic[T]):
+class ResponseModel(BaseModel):
     status: str
-    data: Optional[T] = None
+    data: Optional[Any] = None
     message: Optional[str] = None
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -55,7 +53,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return USERS_DB[username]
 
-@app.post("/token")
+@app.post("/token", response_model=ResponseModel)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         user = USERS_DB.get(form_data.username)
@@ -92,9 +90,9 @@ async def proxy_to_lb(request: Request, call_next):
         return ResponseModel(
             status="error",
             message="Serviço indisponível"
-        )
+        ).dict()
 
-@app.get("/saude")
+@app.get("/saude", response_model=ResponseModel)
 async def saude():
     return ResponseModel(
         status="success",
