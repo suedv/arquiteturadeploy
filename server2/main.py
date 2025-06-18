@@ -10,7 +10,7 @@ from typing import TypeVar, Generic, Optional, Any
 
 load_dotenv()
 
-app = FastAPI(title="Servidor de Aplicação")
+app = FastAPI(title="Servidor de Aplicação 2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,9 +25,11 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-class ResponseModel(BaseModel):
+T = TypeVar('T')
+
+class ResponseModel(BaseModel, Generic[T]):
     status: str
-    data: Optional[Any] = None
+    data: Optional[T] = None
     message: Optional[str] = None
 
 class Item(Base):
@@ -70,10 +72,10 @@ def item_to_dict(item: Item) -> dict:
 
 @app.get("/saude")
 def saude():
-    porta = os.getenv("PORTA", "8002")
+    porta = os.getenv("PORTA", "8003")
     return ResponseModel(
         status="success",
-        data={"status": "saudavel", "servidor": porta}
+        data={"status": "saudavel", "servidor": f"Server 2 - Porta {porta}"}
     )
 
 @app.post("/itens")
@@ -173,8 +175,8 @@ def remover_item(item_id: int, db: Session = Depends(get_db)):
 
 @app.get("/identidade")
 def identidade():
-    porta = os.getenv("PORTA", "desconhecido")
+    porta = os.getenv("PORTA", "8003")
     return ResponseModel(
         status="success",
-        data={"servidor": porta}
+        data={"servidor": f"Server 2 - Porta {porta}"}
     ) 

@@ -1,14 +1,15 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import requests
 import os
-import itertools
-from dotenv import load_dotenv
-from starlette.responses import Response
-from typing import TypeVar, Generic, Optional, Any
+import requests
+from typing import Optional, Any
 from pydantic import BaseModel
+from starlette.responses import Response
+import logging
 
-load_dotenv()
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Load Balancer")
 
@@ -20,39 +21,74 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SERVIDORES = os.getenv("SERVIDORES", "http://localhost:8002,http://localhost:8003").split(",")
-servidor_atual = itertools.cycle(SERVIDORES)
-
-T = TypeVar('T')
-
-class ResponseModel(Generic[T]):
+class ResponseModel(BaseModel):
     status: str
-    data: Optional[T] = None
+    data: Optional[Any] = None
     message: Optional[str] = None
+
+# Lista de servidores para balanceamento
+SERVIDORES = os.getenv("SERVIDORES", "http://localhost:8002,http://localhost:8003").split(",")
+current_server_index = 0
+
+logger.info(f"Load Balancer iniciado com servidores: {SERVIDORES}")
 
 @app.get("/saude")
 def saude():
     return ResponseModel(
         status="success",
-        data={"status": "saudavel", "servico": "load-balancer", "servidores": SERVIDORES}
+        data={
+            "status": "saudavel",
+            "servico": "load-balancer",
+            "servidores": SERVIDORES,
+            "servidor_atual": current_server_index
+        }
     )
 
 @app.middleware("http")
 async def proxy_to_server(request: Request, call_next):
-    if request.url.path in ["/saude", "/docs", "/openapi.json"]:
+    global current_server_index
+    
+    # Se for uma requisição para /saude, não fazer proxy
+    if request.url.path == "/saude":
         return await call_next(request)
-    servidor = next(servidor_atual)
+    
     try:
-        resp = requests.request(
-            method=request.method,
-            url=f"{servidor}{request.url.path}",
-            headers={k: v for k, v in request.headers.items() if k != 'host'},
-            params=dict(request.query_params),
-            data=await request.body()
+        # Selecionar o próximo servidor (round-robin)
+        server_url = SERVIDORES[current_server_index]
+        current_server_index = (current_server_index + 1) % len(SERVIDORES)
+        
+        logger.info(f"Requisição {request.method} {request.url.path} -> Servidor {current_server_index}: {server_url}")
+        
+        # Construir a URL completa
+        target_url = f"{server_url}{request.url.path}"
+        if request.url.query:
+            target_url += f"?{request.url.query}"
+        
+        # Fazer a requisição para o servidor
+        method = request.method
+        headers = dict(request.headers)
+        body = await request.body()
+        
+        response = requests.request(
+            method=method,
+            url=target_url,
+            headers=headers,
+            data=body,
+            timeout=30
         )
-        return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
+        
+        logger.info(f"Resposta do servidor {server_url}: {response.status_code}")
+        
+        # Retornar a resposta do servidor diretamente
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
+        
     except Exception as e:
+        logger.error(f"Erro ao conectar com servidor {server_url}: {str(e)}")
         return ResponseModel(
             status="error",
-            message="Serviço indisponível"
+            message=f"Erro ao conectar com servidor: {str(e)}"
         ) 
