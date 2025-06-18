@@ -1,5 +1,27 @@
 # 🏗️ Arquitetura Distribuída - FastAPI
 
+```mermaid
+graph TD
+    A[Usuário/Cliente] -->|HTTP| B(API_Gateway)
+    B -->|Validação JWT| C(Load_Balancer)
+    C -->|Round Robin| D1(Server_1)
+    C -->|Round Robin| D2(Server_2)
+    D1 -- PostgreSQL --> E[(Banco de Dados)]
+    D2 -- PostgreSQL --> E
+    D1 -- Redis --> F[(Cache Redis)]
+    D2 -- Redis --> F
+    B -- Monitoramento --> G(Monitoring Service)
+    G -- Dashboard/Alertas --> H[Admin/DevOps]
+    style B fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#bbf,stroke:#333,stroke-width:2px
+    style D1 fill:#bfb,stroke:#333,stroke-width:2px
+    style D2 fill:#bfb,stroke:#333,stroke-width:2px
+    style E fill:#ffd,stroke:#333,stroke-width:2px
+    style F fill:#ffd,stroke:#333,stroke-width:2px
+    style G fill:#fcc,stroke:#333,stroke-width:2px
+    style H fill:#eee,stroke:#333,stroke-width:2px
+```
+
 Uma arquitetura distribuída completa com FastAPI, incluindo API Gateway, Load Balancer, múltiplos servidores, cache, monitoramento e autenticação JWT.
 
 ## 📋 Componentes da Arquitetura
